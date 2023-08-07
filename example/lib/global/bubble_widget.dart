@@ -1,6 +1,7 @@
 import 'package:bubble/bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:twilio_chat_plugin_example/helpers/constants.dart';
 import 'package:twilio_chat_plugin_example/models/chats.dart';
 
 class BubbleWidget extends StatelessWidget {
@@ -30,19 +31,19 @@ class BubbleWidget extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    messageMap.author,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black),
-                  ),
+                  // Text(
+                  //   messageMap.author,
+                  //   style: const TextStyle(
+                  //       fontSize: 14,
+                  //       fontWeight: FontWeight.w500,
+                  //       color: Colors.black),
+                  // ),
                   const SizedBox(height: 10),
                   ConstrainedBox(
                       constraints:
                           const BoxConstraints(minWidth: 30, maxWidth: 250),
-                      child:
-                          Text(messageMap.body, maxLines: 50, softWrap: true)),
+                      child: Text(Constants.getBody(messageMap.body),
+                          maxLines: 50, softWrap: true)),
                   Padding(
                     padding: EdgeInsets.only(
                         top: MediaQuery.of(context).size.width * .015,

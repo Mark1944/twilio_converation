@@ -27,7 +27,7 @@ class GetTokenDetailsApiService extends StateNotifier<String> {
 
     final data = {
       "identity": identity,
-      "password": "password00",
+      "password": "password01",
     };
 
     Response? res;
@@ -45,6 +45,8 @@ class GetTokenDetailsApiService extends StateNotifier<String> {
 
     if (res.statusCode == 200) {
       final String list = res.data;
+
+      print(list);
 
       state = list;
 

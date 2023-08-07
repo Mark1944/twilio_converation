@@ -9,7 +9,7 @@ List<Chats> chatsFromJson(String str) =>
 
 class Chats {
   String participant;
-  String sid;
+  // String sid;
   List<dynamic> attachedMedia;
   String participantSid;
   String body;
@@ -20,7 +20,7 @@ class Chats {
 
   Chats({
     required this.participant,
-    required this.sid,
+    // required this.sid,
     required this.attachedMedia,
     required this.participantSid,
     required this.body,
@@ -31,8 +31,8 @@ class Chats {
   });
 
   factory Chats.fromJson(Map<String, dynamic> json) => Chats(
-        participant: json["participant"],
-        sid: json["sid"],
+        participant: json["participant"] ?? "",
+        // sid: json["sid"],
         attachedMedia: List<dynamic>.from(json["attachedMedia"].map((x) => x)),
         participantSid: json["participantSid"],
         body: json["body"],
