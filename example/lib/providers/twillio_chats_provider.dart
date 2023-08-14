@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -35,49 +35,193 @@ class TwilioChats extends StateNotifier<List<Chats>> {
       TwilioChatConversation();
 
   getChat() async {
+    final identity = ref.watch(identityProvider);
+    List<Chats> chats = [];
     List<dynamic> result = await twilioChatConversationPlugin.getMessages(
           conversationId: chatId,
         ) ??
         [];
 
-    result.sort((a, b) => (b['dateCreated']).compareTo(a['dateCreated']));
-    final episodeObject = chatsFromJson(jsonEncode(result));
+    var resultss = jsonEncode(result);
+    var resultss2 = jsonDecode(resultss);
 
-    log("episodeObject ,$episodeObject");
-    log("episodeObject id,$chatId");
-    // log("episodeObject id,${episodeObject[0].sid}");u
+    debugPrint(resultss2.toString());
 
-    // for (var element in episodeObject) {
-    updateMessage(
-      conversationSid: chatId,
-      enteredMessage: Constants.getBody(
-        episodeObject[0].body,
-      ),
-      messageId: "episodeObject[0].sid",
-    );
-    // }
+    for (var elm in resultss2) {
+      String? sid;
+      String? body;
+      String? dateCreated;
+      String? author;
+      List<dynamic> attachedMedia;
 
-    state = episodeObject;
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        sid = elm['sid'];
+        body = elm['body'];
+        dateCreated = elm['dateCreated'];
+        author = elm['author'];
+        attachedMedia = elm['attachedMedia'] ?? [];
+      } else {
+        sid = extractValue(elm['description'], "sid: '([^']+)'");
+        body = extractValue(elm['description'], "body: '([^']+)'");
+        dateCreated =
+            extractValue(elm['description'], "dateCreated: '([^']+)'");
+        author = extractValue(elm['description'], "author: '([^']+)'");
+        attachedMedia = elm['attachedMedia'];
+      }
+
+      chats.add(
+        Chats(
+          // participant: elm['participant'],
+          sid: sid!,
+          attachedMedia: attachedMedia,
+          body: body!,
+          dateCreated: DateTime.parse(dateCreated!),
+          author: author!,
+        ),
+      );
+    }
+
+    for (var chat in chats) {
+      if (Constants.getIsRead(
+                chat.body,
+              ) ==
+              "false" &&
+          chat.author != identity) {
+        updateMessage(
+          conversationSid: chatId,
+          author: chat.author,
+          enteredMessage: Constants.getBody(
+            chat.body,
+          ),
+          messageId: chat.sid,
+        );
+      }
+    }
+    chats.sort((a, b) => (b.dateCreated).compareTo(a.dateCreated));
+
+    state = chats;
     subscribeToMessageUpdate();
+  }
+
+  String? extractValue(String input, String pattern) {
+    RegExp regExp = RegExp(pattern);
+    RegExpMatch? match = regExp.firstMatch(input);
+    if (match != null && match.groupCount >= 1) {
+      return match.group(1);
+    }
+    return null;
   }
 
   subscribeToMessageUpdate() {
     twilioChatConversationPlugin.subscribeToMessageUpdate(
         conversationSid: chatId);
     twilioChatConversationPlugin.onMessageReceived.listen((event) {
-      final result = Chats.fromJson(Map<String, dynamic>.from(event));
 
-      if (mounted) {
-        state = [
-          ...state,
-          result,
-        ];
-        state.sort((a, b) => (b.dateCreated).compareTo(a.dateCreated));
+          final identity = ref.watch(identityProvider);
+
+      String? sid;
+      String? body;
+      String? dateCreated;
+      String? author;
+      List<dynamic> attachedMedia;
+
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        debugPrint(event['body']);
+
+        sid = event['sid'];
+        body = event['body'];
+        dateCreated = event['dateCreated'];
+        author = event['author'];
+        attachedMedia = event['attachedMedia'] ?? [];
+      } else {
+        sid = extractValue(event['description'], "sid: '([^']+)'");
+        body = extractValue(event['description'], "body: '([^']+)'");
+        dateCreated =
+            extractValue(event['description'], "dateCreated: '([^']+)'");
+        author = extractValue(event['description'], "author: '([^']+)'");
+        attachedMedia = event['attachedMedia'];
       }
 
+      if (state.any((obj) => obj.sid == sid)) {
+        state = [
+          for (final chatt in state)
+            if (chatt.sid == sid)
+              Chats(
+                // participant: event['participant'],
+                sid: sid!,
+                attachedMedia: attachedMedia,
+                body: body!,
+                dateCreated: DateTime.parse(dateCreated!),
+                author: author!,
+              )
+            else
+              chatt,
+        ];
+      } else {
+        state = [
+          ...state,
+          Chats(
+            // participant: event['participant'],
+            sid: sid!,
+            attachedMedia: attachedMedia,
+            body: body!,
+            dateCreated: DateTime.parse(dateCreated!),
+            author: author!,
+          ),
+        ];
+      }
+
+      state.sort((a, b) => (b.dateCreated).compareTo(a.dateCreated));
+
       state = state;
+
+      if (author != identity) {
+        updateMessage(
+          conversationSid: chatId,
+          author: author!,
+          enteredMessage: Constants.getBody(
+            body!,
+          ),
+          messageId: sid,
+        );
+      }
     });
   }
+
+  // sssssssend({required String bodys}) async {
+  //   const uname = 'ACb3e67678e4c98201c6d28b042c8fc9a4';
+  //   const pword = '50d38ccf51811b582d6f17d931f1fbd6';
+  //   final authn = 'Basic ${base64Encode(utf8.encode('$uname:$pword'))}';
+
+  //   final headers = {
+  //     'Content-Type': 'application/x-www-form-urlencoded',
+  //     'Authorization': authn,
+  //     'X-Twilio-Webhook-Enabled': 'false',
+  //   };
+
+  //   print("res.body error header: ,$headers");
+
+  //   final data = {
+  //     'Author': 'user02',
+  //     'Body': bodys,
+  //   };
+
+  //   final url = Uri.parse(
+  //       'https://conversations.twilio.com/v1/Conversations/CH246dade7a4ae40d383da0b1480827a84/Messages/IM4eea9abad29443a3826e4ee40767d577');
+
+  //   late http.Response res;
+  //   try {
+  //     res = await http.post(url, headers: headers, body: data);
+  //   } catch (e) {
+  //     print("res.body error: ,$e");
+  //   }
+  //   final status = res.statusCode;
+  //   if (status != 200) throw Exception('http.post error: statusCode= $status');
+
+  //   // print(res.body);
+
+  //   print("res.body error body: ,${res.body}");
+  // }
 
   joinChat({
     required conversationId,
@@ -117,12 +261,7 @@ class TwilioChats extends StateNotifier<List<Chats>> {
       "isRead": false,
     };
 
-    print(message);
     var encodedeMessage = jsonEncode(message);
-    print("encodedeMessage ,$encodedeMessage");
-
-    var decodeMessage = jsonDecode(encodedeMessage);
-    print("decodeMessage ,$decodeMessage");
 
     String response;
     try {
@@ -131,6 +270,7 @@ class TwilioChats extends StateNotifier<List<Chats>> {
             conversationId: conversationSid,
           ) ??
           "UnImplemented Error";
+
       response = result;
       return response;
     } on PlatformException catch (e) {
@@ -142,28 +282,23 @@ class TwilioChats extends StateNotifier<List<Chats>> {
   updateMessage(
       {required String enteredMessage,
       required String conversationSid,
-      required messageId}) async {
+      required messageId,
+      required String author}) async {
     var message = {
       "message": enteredMessage,
       "isLink": false,
       "isRead": true,
     };
 
-    print(message);
     var encodedeMessage = jsonEncode(message);
-    print("encodedeMessage ,$encodedeMessage");
-
-    var decodeMessage = jsonDecode(encodedeMessage);
-    print("decodeMessage ,$decodeMessage");
 
     String basicAuth =
         'Basic ${base64.encode(utf8.encode('ACb3e67678e4c98201c6d28b042c8fc9a4:50d38ccf51811b582d6f17d931f1fbd6'))}';
-    //  final data = {
-    //   "identity": identity,
-    //   "password": "password01",
-    // };
 
-    print("basicAuth ,$basicAuth");
+    final data = {
+      'Author': author,
+      'Body': encodedeMessage,
+    };
 
     Response? res;
 
@@ -172,12 +307,13 @@ class TwilioChats extends StateNotifier<List<Chats>> {
       ..interceptors.add(PrettyDioLogger());
 
     res = await dio.post(
-        "https://conversations.twilio.com/v1/Conversations/CHe90b7e2c8bad447eb7f90cff64dcf5ee/Messages/IM52af459b8e0343208a6a29f7e92b63bf",
-// /*$conversationSid/Messages/$messageId*/  CH1ad24dc8893149659eeda23d379a7bd2    ",
-        data: "Body=$encodedeMessage",
+        "https://conversations.twilio.com/v1/Conversations/$conversationSid/Messages/$messageId",
+        data: data,
         options: Options(
           headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
             "Authorization": basicAuth,
+             'X-Twilio-Webhook-Enabled': true,
           },
         ));
 
@@ -208,8 +344,6 @@ class TwilioChats extends StateNotifier<List<Chats>> {
     // }
   }
 
-  // POST https://conversations.twilio.com/v1/Conversations/{ConversationSid}/Messages/{Sid}
-
   void unSubscribeToMessageUpdate() {
     twilioChatConversationPlugin.unSubscribeToMessageUpdate(
         conversationSid: chatId);
@@ -221,29 +355,3 @@ class TwilioChats extends StateNotifier<List<Chats>> {
     unSubscribeToMessageUpdate();
   }
 }
-
-
-//  {
-// flutter: ║                 body: "{"message":"heeey","isLink":false,"isRead":false}",
-// flutter: ║                 index: 36,
-// flutter: ║                 author: "user01",
-// flutter: ║                 date_updated: "2023-08-07T13:34:59Z",
-// flutter: ║                 media: null,
-// flutter: ║                 participant_sid: "MB67ddeabaded84ce0b4e8ddff390b916e",
-// flutter: ║                 conversation_sid: "CHe90b7e2c8bad447eb7f90cff64dcf5ee",
-// flutter: ║                 account_sid: "ACb3e67678e4c98201c6d28b042c8fc9a4",
-// flutter: ║                 delivery: null,
-// flutter: ║                 "https://conversations.twilio.com/v1/Conversations/CHe90b7e2c8bad447eb7f90
-// flutter: ║                 cff64dcf5ee/Messages/IM52af459b8e0343208a6a29f7e92b63bf"
-// flutter: ║                 date_created: "2023-08-07T13:34:59Z",
-// flutter: ║                 content_sid: null,
-// flutter: ║                 sid: "IM52af459b8e0343208a6a29f7e92b63bf",
-// flutter: ║                 attributes: "{}",
-// flutter: ║                 links: {
-// flutter: ║                     "https://conversations.twilio.com/v1/Conversations/CHe90b7e2c8bad447eb
-// flutter: ║                     7f90cff64dcf5ee/Messages/IM52af459b8e0343208a6a29f7e92b63bf/Receipts"
-// flutter: ║                     "https://conversations.twilio.com/v1/Conversations/CHe90b7e2c8bad447eb
-// flutter: ║                     7f90cff64dcf5ee/Messages/IM52af459b8e0343208a6a29f7e92b63bf/ChannelMet
-// flutter: ║                     adata"
-// flutter: ║                }
-// flutter: ║            }

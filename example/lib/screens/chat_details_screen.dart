@@ -31,6 +31,26 @@ class ChatDetailsScreen extends HookConsumerWidget {
       );
     });
     final conversations = ref.watch(twilioChatsProvider(conversationSid));
+
+    // final wsUrl = Uri.parse('ws://ws.postman-echo.com/raw');
+    // var channel = WebSocketChannel.connect(wsUrl);
+
+    // channel.stream.listen((message) {
+    //   channel.sink.add('received!');
+    //   // channel.sink.close(status.goingAway);
+    // });
+
+    //  final wsUrl = Uri.parse(
+
+    //       'ws://ws.postman-echo.com/raw/');
+
+    // // var channel = WebSocketChannel.connect(wsUrl);
+
+    // channel = IOWebSocketChannel.connect(wsUrl);
+    // channel.stream.listen((message) {
+    //   // Handle incoming message
+    //   print('Received message: $message');
+    // });
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
@@ -66,6 +86,11 @@ class ChatDetailsScreen extends HookConsumerWidget {
                   msgController: msgController,
                   haveValidation: true,
                   onSend: (typeMessage) {
+                    // ref
+                    //     .read(twilioChatsProvider(conversationSid).notifier)
+                    //     .sssssssend(
+                    //         bodys:
+                    //             '{"message":"Sheeeysskks  You am cool testing","isLink":false,"isRead":false}');
                     ref
                         .read(twilioChatsProvider(conversationSid).notifier)
                         .sendMessage(

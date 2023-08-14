@@ -8,6 +8,8 @@ import 'package:twilio_chat_plugin_example/screens/chat_screen.dart';
 
 final getTokenProviderLoader = StateProvider((ref) => true);
 
+final identityProvider = StateProvider((ref) => "");
+
 final getTokenProvider =
     StateNotifierProvider<GetTokenDetailsApiService, String>(
   (ref) {
@@ -25,9 +27,11 @@ class GetTokenDetailsApiService extends StateNotifier<String> {
   getToken({required BuildContext context, String? identity}) async {
     const url = "https://denim-albatross-3166.twil.io/token-service";
 
+    ref.read(identityProvider.notifier).state = identity!;
+
     final data = {
       "identity": identity,
-      "password": "password01",
+      "password": "password02",
     };
 
     Response? res;
@@ -45,8 +49,6 @@ class GetTokenDetailsApiService extends StateNotifier<String> {
 
     if (res.statusCode == 200) {
       final String list = res.data;
-
-      print(list);
 
       state = list;
 

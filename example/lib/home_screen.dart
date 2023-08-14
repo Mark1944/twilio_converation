@@ -25,11 +25,15 @@ class HomeScreen extends HookConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.80,
-                  height: MediaQuery.of(context).size.height * 0.08,
-                  child: SvgPicture.asset(
-                    "assets/images/twilio_logo_red.svg",
-                  )),
+                width: MediaQuery.of(context).size.width * 0.80,
+                height: MediaQuery.of(context).size.height * 0.08,
+                child:Image.network(
+    'https://docs.flutter.dev/assets/images/dash/dash-fainting.gif'),
+                
+                //  SvgPicture.asset(
+                //   "assets/images/twilio_logo_red.svg",
+                // ),
+              ),
               SizedBox(
                 height: MediaQuery.of(context).size.width * 0.16,
               ),

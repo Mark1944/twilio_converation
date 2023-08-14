@@ -31,19 +31,25 @@ class BubbleWidget extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Text(
-                  //   messageMap.author,
-                  //   style: const TextStyle(
-                  //       fontSize: 14,
-                  //       fontWeight: FontWeight.w500,
-                  //       color: Colors.black),
-                  // ),
+                  Text(
+                    Constants.getIsRead(
+                      messageMap.body,
+                    ),
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black),
+                  ),
                   const SizedBox(height: 10),
                   ConstrainedBox(
                       constraints:
                           const BoxConstraints(minWidth: 30, maxWidth: 250),
-                      child: Text(Constants.getBody(messageMap.body),
-                          maxLines: 50, softWrap: true)),
+                      child: Text(
+                          Constants.getBody(
+                            messageMap.body,
+                          ),
+                          maxLines: 50,
+                          softWrap: true)),
                   Padding(
                     padding: EdgeInsets.only(
                         top: MediaQuery.of(context).size.width * .015,
